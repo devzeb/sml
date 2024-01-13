@@ -1091,8 +1091,8 @@ template <class T, class, class... Ts>
 transitions<Ts...> get_state_mapping_impl(state_mappings<T, aux::type_list<Ts...>> *);
 template <class T, class TMappings, class TUnexpected>
 struct get_state_mapping {
-  using type = aux::conditional_t<aux::is_same<decltype(get_state_mapping_impl<T, TUnexpected>((TMappings *)0)), transitions<TUnexpected>>::value, 
-      decltype(get_state_mapping_impl<_, TUnexpected>((TMappings *)0)), 
+  using type = aux::conditional_t<aux::is_same<decltype(get_state_mapping_impl<T, TUnexpected>((TMappings *)0)), transitions<TUnexpected>>::value,
+      decltype(get_state_mapping_impl<_, TUnexpected>((TMappings *)0)),
       decltype(get_state_mapping_impl<T, TUnexpected>((TMappings *)0))>;
 };
 template <class S>
@@ -1446,18 +1446,21 @@ struct sm_impl : aux::conditional_t<aux::should_not_subclass_statemachine_class<
   constexpr sm_impl(const TPool &p, aux::false_type) : sm_t{aux::try_get<sm_t>(&p)}, transitions_{(*this)()} {
     initialize(typename sm_impl<TSM>::initial_states_t{});
   }
-  template <class TPool>
-  constexpr sm_impl(const TPool &p, aux::true_type) : transitions_{
-      [&]() {
-          static_assert(!(should_not_instantiate_statemachine_class_t::value &&
-                          aux::would_instantiate_missing_ctor_parameter<sm_t, decltype(&p)>()),
-                        "When policy sml::dont_instantiate_statemachine_class is used, you have to provide a reference to an "
-                        "instance of the"
-                        "transition table type (boost::sml::sm< your_transition_table_type >) as a constructor parameter."
-          );
 
-          return aux::try_get<sm_t>(&p)();
-        }()} {
+  template <class TPool>
+  constexpr decltype(auto) try_get_without_instantiating(const TPool &p) const {
+    static_assert(!(should_not_instantiate_statemachine_class_t::value &&
+              aux::would_instantiate_missing_ctor_parameter<sm_t, decltype(&p)>()),
+            "When policy sml::dont_instantiate_statemachine_class is used, you have to provide a reference to an "
+            "instance of the"
+            "transition table type (boost::sml::sm< your_transition_table_type >) as a constructor parameter."
+  );
+
+    return aux::try_get<sm_t>(&p)();
+  }
+
+  template <class TPool>
+  constexpr sm_impl(const TPool &p, aux::true_type) : transitions_{ try_get_without_instantiating(p) } {
     initialize(typename sm_impl<TSM>::initial_states_t{});
   }
   template <class TEvent, class TDeps, class TSubs>
