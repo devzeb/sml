@@ -665,6 +665,13 @@ constexpr auto wrap(false_type, T& variable) { // non member variables
     return static_cast<bool>(variable);
   };
 }
+template <class T>
+constexpr auto wrap(false_type, T* variable) { // non member variables
+    return [variable] {
+        // return value of member variable
+        return static_cast<bool>(*variable);
+    };
+}
 
 template <class TClass, class TMemberVariableType>
 constexpr auto wrap_member(true_type, TMemberVariableType TClass::*pointer_to_member_function) { // member functions
