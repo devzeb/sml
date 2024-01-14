@@ -1777,7 +1777,14 @@ class sm {
   using transitions = aux::apply_t<aux::type_list, transitions_t>;
 
  private:
-  using sm_all_t = aux::apply_t<get_non_empty_t, aux::join_t<aux::type_list<sm_t>, aux::apply_t<get_sm_t, state_machines>>>;
+  using sm_all_t = aux::apply_t<get_non_empty_t, aux::join_t<
+        aux::conditional_t<
+            aux::is_same<no_policy, typename TSM::dont_instantiate_statemachine_class_policy>::value,
+            aux::type_list<sm_t>,
+            aux::none_type>
+      , aux::apply_t<get_sm_t, state_machines>>>;
+
+
   using sub_sms_t =
       aux::apply_t<aux::pool,
                    typename convert_to_sm<TSM, aux::apply_t<aux::unique_t, aux::apply_t<get_sub_sms, states>>>::type>;
@@ -1785,7 +1792,6 @@ class sm {
   using deps_t =
       aux::apply_t<aux::pool,
                    aux::apply_t<aux::unique_t, aux::join_t<
-                       // aux::type_list<sm_t>,
     deps, sm_all_t, logger_dep_t, aux::apply_t<merge_deps, sub_sms_t>>>>;
   struct events_ids : aux::apply_t<aux::inherit, events> {};
 
