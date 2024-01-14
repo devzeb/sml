@@ -4,7 +4,8 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #
-add_executable(test_actions_defer actions_defer.cpp)
+add_executable(test_actions_defer actions_defer.cpp
+        dont_instantiate_statemachine_class.cpp)
 add_test(test_actions_defer test_actions_defer)
 
 add_executable(test_actions_process actions_process.cpp)
@@ -87,4 +88,8 @@ add_test(test_transition_table test_transition_table)
 add_executable(test_unexpected_events unexpected_events.cpp)
 add_test(test_unexpected_events test_unexpected_events)
 
+add_executable(test_dont_instantiate_statemachine_class dont_instantiate_statemachine_class.cpp)
+add_test(test_dont_instantiate_statemachine_class test_dont_instantiate_statemachine_class)
+
 add_subdirectory(errors)
+
