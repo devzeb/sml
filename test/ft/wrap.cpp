@@ -79,7 +79,7 @@ test wrap_member_functions = [] {
   };
 
   member_functions mf{};
-  sm<member_functions> state_machine{mf};
+  sm<member_functions, dont_instantiate_statemachine_class> state_machine{mf};
   expect(state_machine.is(state<s1>));
   state_machine.process_event(next{});
   expect(state_machine.is(state<s2>));

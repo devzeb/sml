@@ -166,6 +166,44 @@ template <class T, class U>
 struct is_empty_base : T {
   U _;
 };
+/// remove_cv
+template<class T>
+struct remove_cv{ using type = T; };
+template<class T>
+struct remove_cv<const T>{ using type = T; };
+template<class T>
+struct remove_cv<volatile T>{ using type = T; };
+template<class T>
+struct remove_cv<const volatile T>{ using type = T; };
+template<class T>
+using remove_cv_t = typename remove_cv<T>::type;
+
+template<class>
+struct is_const : public false_type { };
+template<class T>
+struct is_const<T const> : public true_type { };
+template<class T>
+using is_const_t = typename is_const<T>::type;
+
+template<class T>
+struct is_function: public integral_constant<bool, !is_const<const T>::value> { };
+template<class T>
+struct is_function<T&>: public false_type { };
+template<class T>
+struct is_function<T&&> : public false_type { };
+template<class T>
+using is_function_t = typename is_function<T>::type;
+
+template<class>
+struct is_member_function_pointer_helper : public false_type { };
+template<class T, class TClass>
+struct is_member_function_pointer_helper<T TClass::*> : public is_function<T>::type { };
+/// is_member_function_pointer
+template<class T>
+struct is_member_function_pointer : public is_member_function_pointer_helper<aux::remove_cv_t<T>>::type{ };
+template<class T>
+using is_member_function_pointer_t = typename is_member_function_pointer<T>::type;
+
 template <class T>
 struct is_empty : aux::integral_constant<bool, sizeof(is_empty_base<T, none_type>) == sizeof(none_type)> {};
 template <class>
@@ -614,10 +652,43 @@ struct string<T> {
   constexpr static auto c_str_impl(...) { return get_type_name<T>(); }
 };
 }  // namespace aux
+
+namespace aux {
 template <class T>
-constexpr auto wrap(T callback) {
+constexpr auto wrap(true_type, T callback) { // non member functions
   return aux::zero_wrapper<T, T>{callback};
 }
+template <class T>
+constexpr auto wrap(false_type, T& variable) { // non member variables
+  return [&variable] {
+    // return value of member variable
+    return static_cast<bool>(variable);
+  };
+}
+
+template <class TClass, class TMemberVariableType>
+constexpr auto wrap_member(true_type, TMemberVariableType TClass::*pointer_to_member_function) { // member functions
+  return wrap_non_member(true_type{}, pointer_to_member_function);
+}
+template <class TClass, class TMemberVariableType>
+constexpr auto wrap_member(false_type, TMemberVariableType TClass::*pointer_to_member_variable) { // member variables
+  return [pointer_to_member_variable](TClass& instance) {
+    // return value of member variable
+    return static_cast<bool>(instance.*pointer_to_member_variable);
+  };
+}
+} // namespace aux
+
+template <class T>
+constexpr auto wrap(T callback) {
+  return aux::wrap(aux::is_function_t<aux::remove_cv_t<T>>{}, callback);
+}
+
+template <class TClass, class TMemberVariableType>
+constexpr auto wrap(TMemberVariableType TClass::*pointer_to_member) {
+  return aux::wrap_member(aux::is_member_function_pointer_t<decltype(pointer_to_member)>{}, pointer_to_member);
+}
+
 namespace back {
 namespace policies {
 struct defer_queue_policy__ {};
