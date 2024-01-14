@@ -421,9 +421,9 @@ template <class T>
 constexpr T *try_get(const pool_type<T *> *object) {
   return object->value;
 }
-template <class T, class PoolType>
+template <class T, class TPool>
 constexpr bool would_instantiate_missing_ctor_parameter() {
-  return is_same<missing_ctor_parameter<T>, decltype(try_get<T>(aux::declval<PoolType>()))>::value;
+  return is_same<missing_ctor_parameter<T>, decltype(try_get<T>(aux::declval<TPool>()))>::value;
 }
 template <class T, class TPool>
 constexpr T &get(TPool &p) {
